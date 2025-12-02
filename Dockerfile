@@ -12,6 +12,8 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Run the bot with tsx (no build step needed)
-CMD ["npm", "run", "dev"]# Run the bot
+# Build TypeScript
+RUN npm run build
+
+# Run the bot
 CMD ["npm", "start"]
