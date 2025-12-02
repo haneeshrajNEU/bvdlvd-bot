@@ -20,4 +20,5 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # Run the bot
+CMD ["npm", "start"]# Run the bot
 CMD ["npm", "start"]
