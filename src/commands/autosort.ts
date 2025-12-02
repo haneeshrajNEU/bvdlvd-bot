@@ -1,5 +1,6 @@
-import { SlashCommandBuilder, PermissionFlagsBits, TextChannel, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, TextChannel, EmbedBuilder, ChannelFlagsBitField } from 'discord.js';
 import type { Command } from '../types/command';
+import { CHANNEL_IDS, ROLE_IDS } from '../config/channels';
 
 const FACTIONS = {
 	CLARITY: '☀️ Order of Clarity',
@@ -13,7 +14,7 @@ export const command: Command = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 	execute: async (interaction) => {
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.deferReply({ flags: ['Ephemeral'] });
 
 		const guild = interaction.guild;
 		if (!guild) {
@@ -21,26 +22,30 @@ export const command: Command = {
 			return;
 		}
 
-		const clarityRole = guild.roles.cache.find(r => r.name === FACTIONS.CLARITY);
-		const staticRole = guild.roles.cache.find(r => r.name === FACTIONS.STATIC);
+		const clarityRole = guild.roles.cache.get(ROLE_IDS.CLARITY_ROLE);
+		const staticRole = guild.roles.cache.get(ROLE_IDS.STATIC_ROLE);
 
 		if (!clarityRole || !staticRole) {
-			await interaction.editReply('Could not find one or more faction roles.');
+			await interaction.editReply('Could not find one or more faction roles. Please ensure role IDs are configured in config/channels.ts.');
 			return;
 		}
 
-		const broadcastChannel = guild.channels.cache.find(
-			ch => ch.name === 'thecalm' || ch.name === 'thefracture'
-		) as TextChannel | undefined;
+		const calmChannel = guild.channels.cache.get(CHANNEL_IDS.THE_CALM) as TextChannel | undefined;
+		const immigrationChannel = guild.channels.cache.get(CHANNEL_IDS.PRESENCE_IMMIGRATION_SYSTEM) as TextChannel | undefined;
 
-		if (!broadcastChannel) {
-			await interaction.editReply('Could not find the broadcast channel.');
+		if (!calmChannel || !immigrationChannel) {
+			await interaction.editReply('Could not find one or more announcement channels. Please ensure channel IDs are configured in config/channels.ts.');
 			return;
 		}
 
 		try {
-			await guild.members.fetch();
+			await guild.members.fetch({ withPresences: false });
+		}
+		catch (err) {
+			console.warn('Could not fetch all members, continuing with available members:', err);
+		}
 
+		try {
 			// Get all members who don't have either faction role (they're in "immigration")
 			const unassignedMembers = guild.members.cache.filter(member =>
 				!member.user.bot &&
@@ -54,28 +59,33 @@ export const command: Command = {
 			}
 
 			const membersArray = Array.from(unassignedMembers.values());
+			const totalMembers = membersArray.length;
+			const targetClarity = Math.floor(totalMembers / 2);
 			
-			for (let i = membersArray.length - 1; i > 0; i--) {
+			// Create an array with faction assignments: true = Clarity, false = Static
+			const factionAssignments = [
+				...Array(targetClarity).fill(true),
+				...Array(totalMembers - targetClarity).fill(false)
+			];
+			
+			// Shuffle the faction assignments randomly
+			for (let i = factionAssignments.length - 1; i > 0; i--) {
 				const j = Math.floor(Math.random() * (i + 1));
-				[membersArray[i], membersArray[j]] = [membersArray[j], membersArray[i]];
+				[factionAssignments[i], factionAssignments[j]] = [factionAssignments[j], factionAssignments[i]];
 			}
 
-			const halfPoint = Math.floor(membersArray.length / 2);
-			const clarityMembers = membersArray.slice(0, halfPoint);
-			const staticMembers = membersArray.slice(halfPoint);
+			await interaction.editReply(`Starting auto-sort for ${membersArray.length} members...\n${targetClarity} → ☀️ Order of Clarity\n${totalMembers - targetClarity} → 🌑 Child Of Static`);
 
-			await interaction.editReply(`Starting auto-sort for ${membersArray.length} members...\n${clarityMembers.length} → ☀️ Order of Clarity\n${staticMembers.length} → 🌑 Child Of Static`);
+			const clarityChannel = guild.channels.cache.get(CHANNEL_IDS.CLARITY_CHANNEL) as TextChannel | undefined;
 
-			const clarityChannel = guild.channels.cache.find(
-				ch => ch.name.toLowerCase().includes('clarity') && ch.isTextBased()
-			) as TextChannel | undefined;
+			const staticChannel = guild.channels.cache.get(CHANNEL_IDS.STATIC_CHANNEL) as TextChannel | undefined;
 
-			const staticChannel = guild.channels.cache.find(
-				ch => ch.name.toLowerCase().includes('static') && ch.isTextBased()
-			) as TextChannel | undefined;
+			// Assign each member to their randomly determined faction
+			for (let i = 0; i < membersArray.length; i++) {
+				const member = membersArray[i];
+				const isClarity = factionAssignments[i];
 
-			// Assign to Order of Clarity
-			for (const member of clarityMembers) {
+			if (isClarity) {
 				await member.roles.add(clarityRole);
 				const embed = new EmbedBuilder()
 					.setColor(0xFFD700)
@@ -84,17 +94,15 @@ export const command: Command = {
 					.setFooter({ text: '*✦ - Courtesy of The Presence*' })
 					.setTimestamp();
 
-				await broadcastChannel.send({ embeds: [embed] });
+				// Post to both announcement channels
+				await calmChannel.send({ embeds: [embed] });
+				await immigrationChannel.send({ embeds: [embed] });
 
 				if (clarityChannel) {
 					await clarityChannel.send(`Welcome ${member} to the **Order of Clarity**! ✨`);
 				}
-
-				await new Promise(resolve => setTimeout(resolve, 1000));
-			}
-
-			// Assign to Children of Static
-			for (const member of staticMembers) {
+				}
+			else {
 				await member.roles.add(staticRole);
 				const embed = new EmbedBuilder()
 					.setColor(0x4B0082)
@@ -103,25 +111,28 @@ export const command: Command = {
 					.setFooter({ text: '*✦ - Courtesy of The Presence*' })
 					.setTimestamp();
 
-				await broadcastChannel.send({ embeds: [embed] });
+				// Post to both announcement channels
+				await calmChannel.send({ embeds: [embed] });
+				await immigrationChannel.send({ embeds: [embed] });
 
 				if (staticChannel) {
 					await staticChannel.send(`Welcome ${member} to the **Children of Static**! 🔥`);
+				}
 				}
 
 				await new Promise(resolve => setTimeout(resolve, 1000));
 			}
 
 			await interaction.followUp({
-				content: `✅ Auto-sort complete! Assigned ${clarityMembers.length} to Clarity and ${staticMembers.length} to Static.`,
-				ephemeral: true,
+				content: `✅ Auto-sort complete! Assigned ${targetClarity} to Clarity and ${totalMembers - targetClarity} to Static in random order.`,
+				flags: ['Ephemeral'],
 			});
 		}
 		catch (err) {
 			console.error('Error during auto-sort:', err);
 			await interaction.followUp({
-				content: 'There was an error during the auto-sort process.',
-				ephemeral: true,
+				content: 'There was an error during the auto-sort process. Make sure all members are loaded.',
+				flags: ['Ephemeral'],
 			});
 		}
 	},

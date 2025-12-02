@@ -6,8 +6,10 @@ export const command: Command = {
 		.setName('ping')
 		.setDescription('Replies with Pong!'),
 	execute: async (interaction) => {
-		await interaction.reply('Pong!');
-		await interaction.followUp('This is a follow-up message.');
+		await interaction.reply({
+			content: '🏓 Pong!',
+			flags: ['Ephemeral'],
+		});
 	},
 };
 

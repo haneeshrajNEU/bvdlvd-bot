@@ -16,9 +16,9 @@ const client = new Client({
 
 registerEvents(client, commands);
 
-client.once('clientReady', () => {
-	client.user?.setActivity('Signal Classification & Assignment Mechanism', { type: 'STREAMING' });
-});
+// client.once('clientReady', () => {
+// 	client.user?.setActivity("");
+// });
 
 client.on('error', (err) => {
 	console.error('Client error:', err);

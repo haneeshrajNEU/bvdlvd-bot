@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, GuildMember, TextChannel, EmbedBuilder } from 'discord.js';
 import type { Command } from '../types/command';
+import { CHANNEL_IDS, ROLE_IDS } from '../config/channels';
 
 const FACTIONS = {
 	CLARITY: '☀️ Order of Clarity',
@@ -29,7 +30,7 @@ export const command: Command = {
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
 	execute: async (interaction) => {
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.deferReply({ flags: ['Ephemeral'] });
 
 		const targetUser = interaction.options.getUser('member', true);
 		const guild = interaction.guild;
@@ -45,20 +46,19 @@ export const command: Command = {
 			return;
 		}
 
-		const clarityRole = guild.roles.cache.find(r => r.name === FACTIONS.CLARITY);
-		const staticRole = guild.roles.cache.find(r => r.name === FACTIONS.STATIC);
+		const clarityRole = guild.roles.cache.get(ROLE_IDS.CLARITY_ROLE);
+		const staticRole = guild.roles.cache.get(ROLE_IDS.STATIC_ROLE);
 
 		if (!clarityRole || !staticRole) {
-			await interaction.editReply('Could not find one or more faction roles. Please ensure all faction roles exist.');
+			await interaction.editReply('Could not find one or more faction roles. Please ensure channel IDs are configured in config/channels.ts.');
 			return;
 		}
 
-		const broadcastChannel = guild.channels.cache.find(
-			ch => ch.name === 'thecalm' || ch.name === 'thefracture'
-		) as TextChannel | undefined;
+		const calmChannel = guild.channels.cache.get(CHANNEL_IDS.THE_CALM) as TextChannel | undefined;
+		const immigrationChannel = guild.channels.cache.get(CHANNEL_IDS.PRESENCE_IMMIGRATION_SYSTEM) as TextChannel | undefined;
 
-		if (!broadcastChannel) {
-			await interaction.editReply('Could not find the broadcast channel (#thecalm or #thefracture).');
+		if (!calmChannel || !immigrationChannel) {
+			await interaction.editReply('Could not find the announcement channels. Please ensure channel IDs are configured in config/channels.ts.');
 			return;
 		}
 
@@ -79,40 +79,38 @@ export const command: Command = {
 					.setFooter({ text: '- Courtesy of The Presence' })
 					.setTimestamp();
 
-				await broadcastChannel.send({ embeds: [embed] });
+				// Post to both announcement channels
+				await calmChannel.send({ embeds: [embed] });
+				await immigrationChannel.send({ embeds: [embed] });
 
-				const clarityChannel = guild.channels.cache.find(
-					ch => ch.name.toLowerCase().includes('clarity') && ch.isTextBased()
-				) as TextChannel | undefined;
-
+				const clarityChannel = guild.channels.cache.get(CHANNEL_IDS.CLARITY_CHANNEL) as TextChannel | undefined;
 				if (clarityChannel) {
 					await clarityChannel.send(`Welcome ${member} to the **☀️ Order of Clarity**! ✨`);
 				}
 
 				await interaction.editReply(`✦ ${targetUser.tag} has been randomly assigned to **☀️ Order of Clarity**!`);
 			}
-			else {
-				await member.roles.add(staticRole);
+		else {
+			await member.roles.add(staticRole);
 
-				const embed = new EmbedBuilder()
-					.setColor(0x4B0082)
-					.setTitle('🌑 DISSENTION 🌑')
-					.setDescription(`${member} has descended into the **${FACTIONS.STATIC}**!`)
-					.setFooter({ text: '- Courtesy of The Presence' })
-					.setTimestamp();
+			const embed = new EmbedBuilder()
+				.setColor(0x4B0082)
+				.setTitle('🌑 DISSENTION 🌑')
+				.setDescription(`${member} has descended into the **${FACTIONS.STATIC}**!`)
+				.setFooter({ text: '- Courtesy of The Presence' })
+				.setTimestamp();
 
-				await broadcastChannel.send({ embeds: [embed] });
+			// Post to both announcement channels
+			await calmChannel.send({ embeds: [embed] });
+			await immigrationChannel.send({ embeds: [embed] });
 
-				const staticChannel = guild.channels.cache.find(
-					ch => ch.name.toLowerCase().includes('static') && ch.isTextBased()
-				) as TextChannel | undefined;
-
-				if (staticChannel) {
-					await staticChannel.send(`Welcome ${member} to the **🌑 Child Of Static**! 🔥`);
-				}
-
-				await interaction.editReply(`✦ ${targetUser.tag} has been randomly assigned to **🌑 Child Of Static**!`);
+			const staticChannel = guild.channels.cache.get(CHANNEL_IDS.STATIC_CHANNEL) as TextChannel | undefined;
+			if (staticChannel) {
+				await staticChannel.send(`Welcome ${member} to the **🌑 Child Of Static**! 🔥`);
 			}
+
+			await interaction.editReply(`✦ ${targetUser.tag} has been randomly assigned to **🌑 Child Of Static**!`);
+		}
 		}
 		catch (err) {
 			console.error('Error assigning faction:', err);

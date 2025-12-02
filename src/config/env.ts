@@ -10,6 +10,7 @@ export const env = {
 	token: required('DISCORD_TOKEN'),
 	clientId: required('CLIENT_ID'),
 	guildId: process.env.GUILD_ID,
+	geminiApiKey: required('GEMINI_API_KEY'),
 };
 
 export default env;
