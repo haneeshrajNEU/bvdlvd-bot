@@ -15,7 +15,7 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
-# Remove dev dependencies for smaller image (optional)
+# Remove dev dependencies for smaller image
 RUN npm ci --omit=dev
 
 # Run the bot
