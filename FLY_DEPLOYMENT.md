@@ -3,10 +3,11 @@
 ## Prerequisites
 
 1. Install Fly CLI:
+
    ```bash
    # macOS/Linux
    curl -L https://fly.io/install.sh | sh
-   
+
    # Windows (PowerShell)
    pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"
    ```
@@ -26,6 +27,7 @@ flyctl launch
 ```
 
 When prompted:
+
 - **App Name:** `bvdvd-bot` (or choose your own)
 - **Region:** `lhr` (London - closest to UK)
 - **Postgres/Redis:** `n` (you don't need a database)
@@ -43,6 +45,7 @@ flyctl secrets set NODE_ENV=production
 ```
 
 Or set them in the Fly dashboard:
+
 1. Go to [fly.io dashboard](https://fly.io/dashboard)
 2. Select your app
 3. Go to Variables → Secrets
@@ -76,6 +79,7 @@ flyctl ssh console
 ## Step 5: Deploy Updates
 
 After making changes:
+
 ```bash
 git add .
 git commit -m "your message"
@@ -122,17 +126,20 @@ flyctl info
 ## Troubleshooting
 
 **Bot not starting:**
+
 ```bash
 flyctl logs
 # Check the error messages
 ```
 
 **Bot offline after a while:**
+
 - Check if it's crashing: `flyctl logs`
 - Add error handling in code
 - Ensure all env vars are set correctly
 
 **Commands not registering:**
+
 ```bash
 flyctl ssh console
 npm run deploy:commands
@@ -140,12 +147,14 @@ exit
 ```
 
 **Port issues:**
+
 - The app uses port 8080 internally
 - Fly.io handles external routing automatically
 
 ## Keep Bot Running 24/7
 
 Fly.io automatically restarts crashed apps. To ensure continuous uptime:
+
 1. Deploy is complete
 2. Bot runs in background on Fly's servers
 3. If it crashes, it restarts automatically

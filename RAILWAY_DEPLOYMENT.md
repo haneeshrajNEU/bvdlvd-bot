@@ -1,7 +1,9 @@
 # Railway.app Deployment Guide for BVDVD Bot
 
 ## Step 1: Prepare Your Repository
+
 1. Commit all changes:
+
    ```bash
    git add .
    git commit -m "prepare for railway deployment"
@@ -25,6 +27,7 @@
 ## Step 3: Configure Environment Variables
 
 In the Railway dashboard:
+
 1. Go to your project → Variables
 2. Add the following environment variables:
 
@@ -54,15 +57,18 @@ In the Railway dashboard:
 ## Troubleshooting
 
 **If bot doesn't start:**
+
 - Check environment variables are set correctly
 - Review deployment logs in Railway dashboard
 - Ensure Discord token has correct permissions
 
 **If commands don't register:**
+
 - Run `npm run deploy:commands` locally with correct env vars
 - Or in Railway shell, run the deploy command
 
 **Live Logs:**
+
 - Railway shows real-time logs in the dashboard
 - Use these to debug issues
 

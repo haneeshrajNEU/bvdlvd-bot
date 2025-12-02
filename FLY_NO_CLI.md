@@ -5,7 +5,9 @@ Since the Fly CLI has issues on Windows, you can deploy directly from GitHub!
 ## Setup Steps (No Terminal Commands Needed)
 
 ### 1. Push Your Code to GitHub
+
 Make sure all changes are committed and pushed:
+
 ```bash
 git add .
 git commit -m "ready for fly.io deployment"
@@ -27,6 +29,7 @@ git push
 ### 3. Add Environment Variables
 
 In the Fly dashboard:
+
 1. Go to your app
 2. Click "Variables" in the left sidebar
 3. Add each secret (these won't be in logs):
@@ -44,6 +47,7 @@ NODE_ENV=production
 ### 4. Deploy
 
 Once variables are set, Fly will automatically:
+
 1. Detect your repository has changed
 2. Build your Docker image
 3. Deploy the app
@@ -54,6 +58,7 @@ The first deploy takes ~3-5 minutes.
 ### 5. Monitor Your Bot
 
 In the Fly dashboard:
+
 1. Go to your app
 2. Click "Logs" tab to see real-time logs
 3. Check if your bot is connected
@@ -68,6 +73,7 @@ In the Fly dashboard:
 ## Update Your Bot
 
 After making code changes:
+
 ```bash
 git add .
 git commit -m "your message"
@@ -79,6 +85,7 @@ Fly will automatically redeploy within a minute!
 ## Manual Deployment (If Needed)
 
 If auto-deploy doesn't work, you can manually trigger it:
+
 1. Go to Deployments tab
 2. Click "Create Deploy"
 3. Choose your branch (main)
